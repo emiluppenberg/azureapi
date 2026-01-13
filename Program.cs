@@ -70,7 +70,6 @@ app.MapGet("/students", async (StudentsDbContext dbContext) =>
     try
     {
         var students = await dbContext.Students.Include(x => x.Course).ToListAsync();
-        students.ForEach(x => x.Name = "hej");
         return Results.Ok(students);
     }
     catch (Exception ex)
