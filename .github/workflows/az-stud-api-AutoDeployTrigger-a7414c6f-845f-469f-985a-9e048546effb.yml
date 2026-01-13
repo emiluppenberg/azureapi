@@ -1,0 +1,49 @@
+name: Trigger auto deployment for az-stud-api
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ master ]
+    paths:
+    - '**'
+    - '.github/workflows/az-stud-api-AutoDeployTrigger-a7414c6f-845f-469f-985a-9e048546effb.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZSTUDAPI_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZSTUDAPI_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZSTUDAPI_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}
+          _dockerfilePathKey_: _dockerfilePath_
+          _targetLabelKey_: _targetLabel_
+          registryUrl: azurestudemilupp.azurecr.io
+          registryUsername: ${{ secrets.AZSTUDAPI_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.AZSTUDAPI_REGISTRY_PASSWORD }}
+          containerAppName: az-stud-api
+          resourceGroup: azure-students
+          imageToBuild: azurestudemilupp.azurecr.io/az-stud-api:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
